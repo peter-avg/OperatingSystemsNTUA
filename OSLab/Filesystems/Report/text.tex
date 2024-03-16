@@ -1,0 +1,854 @@
+\documentclass{article}
+\usepackage[greek,english]{babel}
+\usepackage{alphabeta}
+\usepackage{xcolor}
+\usepackage{listings}
+\lstset{style=mystyle}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{blindtext}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{steinmetz}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage[shortlabels]{enumitem}
+\usepackage[backend=biber]{biblatex}
+\addbibresource{./report.bib}
+\usepackage{hyperref}
+
+\usepackage{tikz}
+\usepackage{fdsymbol}
+% \newcommand{\comment}[1]{}
+\renewcommand{\labelitemii}{\(\medblackdiamond\)}
+\renewcommand{\labelitemiii}{\(\medblacksquare\)}
+\renewcommand{\labelitemiv}{\(\medblackcircle\)}%
+ \geometry{
+ a4paper,
+ total={170mm,257mm},
+ left=20mm,
+ top=20mm,
+ }
+ \lstset{basicstyle=\ttfamily,
+  showstringspaces=false,
+  commentstyle=\color{red},
+  keywordstyle=\color{blue}
+}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\title{3η Εργαστηριακή Άσκηση Λειτουργικών Συστημάτων}
+\author{Νικόλαος Οικονόμου: 03120014 \\
+        Πέτρος Αυγερίνος: 03115074}
+\date{}
+
+\begin{document}
+\maketitle
+\pagebreak
+\section{Εισαγωγή} 
+Αντικείμενο της παρούσας αναφοράς είναι η εξοικείωση με τα συστήματα αρχείων που χρησιμοποιούνται για 
+την οργάνωση δεδομένων σε συσκευές block. Στο πρώτο μέρος της άσκησης λάβαμε τρεις εικόνες δίσκων και
+μας ζητήθηκε να αντιμετωπίσουμε κάποιες προκλήσεις με χρήση CLI tools και με χρήση ενός hex editor, από
+την μερία δηλαδή του χρήστη.\\
+
+Στο δεύτερο μέρος θα ασχοληθούμε με τα συστήματα αρχείων από την μερία του πυρήνα του Linux, υλοποιώντας
+κάποιες συναρτήσεις σε ένα νέο σύστημα αρχείων ext2-lite, βασισμένο στο ext2 και ελέγχοντας τη σωστή του
+λειτουργία.\\
+
+\section{FS Disk 1}
+Θα ορίσουμε αρχικά κάποιες μεταβλητές για καλύτερη χρήση του hexedit:\\
+\begin{enumerate}
+    \item{$\text{boot} = \text{boot sector offset in bytes} = 1024$}
+    \item{$\text{blocksize} = \text{blocksize in bytes} = 1024$}
+    \item{$\text{blocks per group} = \text{bpg} = 8192$}
+    \item{$\text{superblock} = \text{superblock in bytes} = 1024$}
+    \item{$\text{block group descriptor} =\text{bgd} = \text{bgd in bytes} = 1024$}
+
+\end{enumerate}
+
+\subsection{Ερώτημα 1ο}
+Στο αρχείο utopia.sh προσθέτουμε την εντολή "-drive format=raw,file=fsdisk1.img,if=virtio"
+στο executable του qemu. Με την εντολή μέσα στο VM "lsblk -f" προκύπτει ότι η συσκευή με label fsdisk1.img
+είναι μία Virtio Block Device, με σύστημα αρχείων ext2.\\
+
+\subsection{Ερώτημα 2ο}
+\begin{enumerate}
+    \item{\textbf{tool:} Με χρήση της εντολής lsblk μπορούμε να δούμε ότι το μέγεθος 
+        της συσκευής vdb είναι 50MB.}
+    \item{\textbf{hexedit:} Με χρήση hexedit ανοίγουμε το /dev/vdb και στην οθόνη βλέπουμε συνολικό μέγεθος 
+        0x3200000 = 50ΜΒ.}
+\end{enumerate}
+
+\subsection{Ερώτημα 3ο}
+\begin{enumerate}
+\item{\textbf{tool:} Όπως είπαμε προηγουμένωνς το σύστημα αρχείων είναι το ext2. \\}
+\item{\textbf{hexedit:} Στα offset 56-57 του superblock μπορούμε να δούμε την υπογραφή του ext2, 0xef53.}
+\end{enumerate}
+
+\subsection{Ερώτημα 4ο}
+\begin{enumerate}
+\item{\textbf{tool:} Με την χρήση της εντολής dumpe2fs -h /dev/vdb μπορούμε να δούμε ότι 
+    το σύστημα δημιουργήθηκε την Τρίτη 12 Δεκεμβρίου του 2023 στις 17:23:16.}
+\item{\textbf{hexedit:} Δεν μπορούμε να το δούμε μέσω hexedit για το ext2 filesystem.}
+\end{enumerate}
+
+\subsection{Ερώτημα 5ο}
+\begin{enumerate}
+\item{\textbf{tool:} Με την ίδια εντολή το σύστημα αρχείων προσαρτήθηκε την ίδια ώρα και μέρα 
+    ακριβώς.}
+\item{\textbf{hexedit:} Στα offset 44-47 βλέπουμε τον αριθμό 0x65787AE4 = 1702394596 που είναι σε
+        POSIX time, άρα με την μετατροπή προκύπτει η ίδια ημερομηνία και ώρα με πάνω.}
+\end{enumerate}
+
+\subsection{Ερώτημα 6ο}
+\begin{enumerate}
+\item{\textbf{tool:} Όμοια εντολή με πριν.Στο μονοπάτι /cslab-bunker.}
+\item{\textbf{hexedit:} Αρχικά θα πρέπει να ελέγξουμε αν έχουμε extended superblock fields μέσω του offset 
+    76-79. Πράγματι έχουμε αφού είναι διαφορετικό του μηδενός και μπορούμε να ελέγξουμε τα bytes στο offset 
+136-199. Το μονοπάτι είναι /cslab-bunker.}
+\end{enumerate}
+
+\subsection{Ερώτημα 7ο}
+\item{\textbf{tool:} Με την ίδια εντολή το σύστημα αρχείων γράφτηκε τελευταία ένα δευτερόλεπτο μετά την
+    γέννησή του.}
+\item{\textbf{hexedit:} Στα offset 48-51 βλέπουμε τον αριθμό 0x65787AE5 = 1702394597 που είναι σε
+        POSIX time, άρα με την μετατροπή προκύπτει η ίδια ημερομηνία και ώρα με πάνω.}
+\end{enumerate}
+
+\subsection{Ερώτημα 8ο}
+Σε ένα σύστημα αρχείων, το block είναι η μεγαλύτερη συνεχόμενη ποσότητα χώρου στο δίσκο που μπορεί
+να προσδοθεί σε ένα αρχείο και επίσης η μεγαλύτερη ποσότητα δεδομένων που μπορεί να μεταφερθεί σε μία
+μοναδική διαδικασία I/O. Δεν αντιστοιχίζεται στη φυσική διαρρύθμιση της μνήμης αλλά είναι virtual.\\
+
+\subsection{Ερώτημα 9ο}
+\begin{enumerate}
+    \item{\textbf{tool:} Με χρήση της εντολής dumpe2fs /dev/vdb βλέπουμε ότι το μέγεθος του block είναι 1024.}
+    \item{\textbf{hexedit:} Πηγαίνοντας στη θέση 0x418 που είναι το 24 byte μέσα στο superblock βλέπουμε ότι 
+            είναι ίση με το μηδέν. Γνωρίζουμε όμως ότι για αύτη την θέση ισχύει $log_2(\text{blocksize}) - 10 = \text{τιμή στις θέσεις [0x418:0x421]} = 0 
+    \Rightarrow \text{blocksize} = 1024$}
+\end{enumerate}
+
+\subsection{Ερώτημα 10ο}
+Είναι ένα data structure το οποίο εκφράζει ένα αντικείμενο μέσα στο σύστημα αρχείων. Αποθηκεύει 
+τα χαρακτηριστικά και τις τοποθεσίες των δεδομένων του αντικειμένου μέσα στα blocks. Δεν περιέχει 
+τα ίδια τα δεδομένα, αλλά μία σύνδεση στο block το οποίο τα περιέχει.\\
+
+\subsection{Ερώτημα 11ο}
+\begin{enumerate}
+    \item{\textbf{tool:} Με χρήση της εντολής dumpe2fs -h /dev/vbd βλέπουμε ότι το μέγεθος του inode 
+        είναι 128 bytes.}
+    \item{\textbf{hexedit:} Στα offset 88-89 έχουμε την πληροφορία του μεγέθους του inode που είναι ίση με
+        0x0080 = 128 bytes.}
+\end{enumerate}
+
+\subsection{Ερώτημα 12ο}
+    \item{\textbf{tool:} Τα διαθέσιμα blocks με την ίδια εντολή είναι 49552 ενώ τα διαθέσιμα inodes 
+        είναι 12810.}
+    \item{\textbf{hexedit:} Στα offset 12-15 μπορούμε να δούμε τον αριθμό διαθέσιμων blocks τα οποία 
+        είναι 0xC190=49552 και στα offset 16-19 μπορούμε να δούμε τον αριθμό διαθέσιμων inodes τα οποία είναι
+    0x320A=12810.}
+
+\subsection{Ερώτημα 13ο}
+Το superblock είναι ένας κατάλογος των χαρακτηριστικών ενός συστήματος αρχείων και περιέχει πληροφορίες 
+σχετικά με το βασικό μέγεθος και σχήμα του συστήματος αρχείων. \\
+\subsection{Ερώτημα 14ο}
+To superblock βρίσκεται στην αρχή του συστήματος αρχείων με offset 1024 bytes από την αρχή του όγκου
+(μετά το bootsector).\\
+\subsection{Ερώτημα 15ο}
+Υπό κανονική λειτουργία χρησιμοποιείται μόνο το αρχικό superblock, αλλά σε περίπτωση που προκύψει corruption ή 
+overwrite στο superblock χρησιμοποιούνται τα backups.\\
+
+\subsection{Ερώτημα 16ο}
+\begin{enumerate}
+    \item{\textbf{tool:} Με χρήση dumpe2fs /dev/vdb βλέπουμε ότι τα εφεδρικά superblocks βρίσκονται στο Group 1 
+        στο block 8193, στο Group 2 στο block 16385, στο Group 3 στο block 24577, στο Group 4 στο 32769, στο Group
+        5 στο block 40961, στο Group 6 στο block 49153.}
+    \item{\textbf{hexedit:} $\text{superblock position}_{i} = hex(\text{boot}+(i-1)\cdot\text{bpg}\cdot \text{blocksize})$
+        \begin{enumerate}
+            \item{$\text{superblock position}_{1} = 0x400$}
+            \item{$\text{superblock position(εφ.)}_{2} = 0x800400$}
+            \item{$\text{superblock position(εφ.)}_{3} = 0x1000400$}
+            \item{$\text{superblock position(εφ.)}_{4} = 0x1800400$}
+            \item{$\text{superblock position(εφ.)}_{5} = 0x2000400$}
+            \item{$\text{superblock position(εφ.)}_{6} = 0x2800400$}
+            \item{$\text{superblock position(εφ.)}_{7} = 0x3000400$}
+        \end{enumerate}}
+\end{enumerate}
+
+\subsection{Ερώτημα 17ο}
+Πολλά blocks μαζεύονται για να αποτελέσουν ένα block group. Δεδομένα για ένα αρχείο τοποθετούνται σε 
+ένα μόνο block group για να μειωθούν οι αναζητήσεις για I/O λειτουργίες.\\
+
+\subsection{Ερώτημα 18ο}
+Ο συνολικός αριθμός των block group εξαρτάται από το μέγεθος του partition και το μέγεθος του block. 
+Κατανέμονται σειριακά σε ένα partition του δίσκου ύστερα από το superblock.\\
+
+\subsection{Ερώτημα 19ο}
+\begin{enumerate}
+    \item{\textbf{tool:} Θα το βρούμε με χρήση της εντολής dumpe2fs -g /dev/vdb. Τα groups είναι ίσα με 7.}
+    \item{\textbf{hexedit:} Αν στη συνάρτηση που ορίσαμε στο ερώτημα 16 βάλουμε σαν όρισμα το 8, πάμε στη θέση
+            0x3800400 και προκύπτει error για invalid position στο hexedit, επομένως δεν υπάρχει όγδοο group, άρα σύνολο 7.}
+\end{enumerate}
+\subsection{Ερώτημα 20ο}
+Ο block descriptor είναι ένα data structure το οποίο περιγράφει ένα block group. Περιέχει 
+τα bitmaps των blocks και των inodes, τoν πίνακα των inodes και τoν αριθμό ελεύθερων blocks, 
+ελεύθερων inodes και χρησιμοποιημένων directories.\\
+\subsection{Ερώτημα 21ο}
+Σε περίπτωση που αποτύχει το κύριο block descriptor. \\
+\subsection{Ερώτημα 22ο}
+Αποθηκεύονται όμοια με τα εφεδρικά superblocks.
+\begin{enumerate}
+    \item{\textbf{tool:} Με dumpe2fs /dev/vdb βλέπουμε ότι για το Group 1 το BGD βρίσκεται στο block 8194, για το 
+        Group 2 στο block 16386, για το Group 3 στο block 24578, για το Group 4 στο block 32770, για το Group 5 στο
+        στο 40962, για το Group 6 στο 49154.}
+    \item{\textbf{hexedit:} $\text{BGD position}_{i} = hex(\text{boot}+(i-1)\cdot\text{bpg}\cdot \text{blocksize}
+        + \text{superblock})$
+    \begin{enumerate}
+            \item{$\text{BGD position}_{1} = 0x800$}
+            \item{$\text{BGD position(εφ.)}_{2} = 0x800800$}
+            \item{$\text{BGD position(εφ.)}_{3} = 0x1000800$}
+            \item{$\text{BGD position(εφ.)}_{4} = 0x1800800$}
+            \item{$\text{BGD position(εφ.)}_{5} = 0x2000800$}
+            \item{$\text{BGD position(εφ.)}_{6} = 0x2800800$}
+            \item{$\text{BGD position(εφ.)}_{7} = 0x3000800$}
+    \end{enumerate}}
+\end{enumerate}
+
+\subsection{Ερώτημα 23ο}
+Για κάθε group στο σύστημα έχουμε ένα block bitmap το οποίο διατηρεί την πληροφορία για το
+ποια blocks χρησιμοποιούνται και ποια είναι ελεύθερα.\\
+
+\begin{enumerate}
+    \item{\textbf{tool:} Με dumpe2fs /dev/vdb βλέπουμε ότι για το Group 0 το block bitmap βρίσκεται στο block 3, για το 
+        Group 1 στο block 8195, για το Group 2 στο block 16387, για το Group 3 στο block 24579, για το Group 4 στο block 32771,
+        για το Group 5 στο στο 40963, για το Group 6 στο 49155.}
+    \item{\textbf{hexedit:} $\text{block bitmap position}_{i} = hex(\text{boot}+(i-1)\cdot\text{bpg}\cdot \text{blocksize}
+            + \text{superblock} + \text{bgd})$
+    \begin{enumerate}
+            \item{$\text{block bitmap position}_{1} = 0xC00$}
+            \item{$\text{block bitmap position}_{2} = 0x800C00$}
+            \item{$\text{block bitmap position}_{3} = 0x1000C00$}
+            \item{$\text{block bitmap position}_{4} = 0x1800C00$}
+            \item{$\text{block bitmap position}_{5} = 0x2000C00$}
+            \item{$\text{block bitmap position}_{6} = 0x2800C00$}
+            \item{$\text{block bitmap position}_{7} = 0x3000C00$}
+    \end{enumerate}}
+\end{enumerate}
+
+Για κάθε group στο σύστημα έχουμε επίσης ένα inode bitmap το οποίο διατηρεί την πληροφορία για το
+ποια inodes χρησιμοποιούνται και ποια είναι ελεύθερα.
+\begin{enumerate}
+    \item{\textbf{tool:} Με dumpe2fs /dev/vdb βλέπουμε ότι για το Group 0 το inode bitmap βρίσκεται στο block 4, για το 
+        Group 1 στο block 8196, για το Group 2 στο block 16388, για το Group 3 στο block 24580, για το Group 4 στο block 32772,
+        για το Group 5 στο στο 40964, για το Group 6 στο 49156.}
+    \item{\textbf{hexedit:} $\text{inode bitmap position}_{i} = hex(\text{boot}+(i-1)\cdot\text{bpg}\cdot \text{blocksize}
+            + \text{superblock} + \text{bgd} + \text{block bitmap})$
+    \begin{enumerate}
+            \item{$\text{inode bitmap position}_{1} = 0x1000$}
+            \item{$\text{inode bitmap position}_{2} = 0x801000$}
+            \item{$\text{inode bitmap position}_{3} = 0x1001000$}
+            \item{$\text{inode bitmap position}_{4} = 0x1801000$}
+            \item{$\text{inode bitmap position}_{5} = 0x2001000$}
+            \item{$\text{inode bitmap position}_{6} = 0x2801000$}
+            \item{$\text{inode bitmap position}_{7} = 0x3001000$}
+    \end{enumerate}}
+\end{enumerate}
+
+\subsection{Ερώτημα 24ο}
+Είναι ένας πίνακας από inodes, ένα data structure το οποίο περιέχει πληροφορίες για όλα τα αρχεία μέσα στο σύστημα, 
+την τοποθεσία τους, το μέγεθός τους, τον τύπο τους και τα δικαιώματα χρήσης. Το όνομα του αρχείου
+δεν περιέχεται εδώ καθώς χρησιμοποιούνται οι αριθμοί των inodes για προσπέλαση των δεδομένων αυτών.
+Περιέχονται σε κάθε block group μετά τα inode bitmaps.\\
+\begin{enumerate}
+    \item{\textbf{tool:} Με dumpe2fs /dev/vdb βλέπουμε ότι για το Group 0 το inode table βρίσκεται στα blocks 5-233, για το 
+        Group 1 στα blocks 8197-8425, για το Group 2 στα blocks 16389-16617, για το Group 3 στα blocks 24581-24809, για το Group 4 στα blocks 32773-33001,
+        για το Group 5 στα 40965-41193, για το Group 6 στα 49157-49385.}
+    \item{\textbf{hexedit:} $\text{inode bitmap position}_{i} = hex(\text{boot}+(i-1)\cdot\text{bpg}\cdot \text{blocksize}
+            + \text{superblock} + \text{bgd} + \text{block bitmap} + \text{inode bitmap})$
+    \begin{enumerate}
+            \item{$\text{inode table position}_{1} = 0x1400$}
+            \item{$\text{inode table position}_{2} = 0x801400$}
+            \item{$\text{inode table position}_{3} = 0x1001400$}
+            \item{$\text{inode table position}_{4} = 0x1801400$}
+            \item{$\text{inode table position}_{5} = 0x2001400$}
+            \item{$\text{inode table position}_{6} = 0x2801400$}
+            \item{$\text{inode table position}_{7} = 0x3001400$}
+    \end{enumerate}}
+\end{enumerate}
+
+\subsection{Ερώτημα 25ο}
+To inode περιέχει πληροφορίες σχετικά με το αρχείο, πιο συγκεκριμένα με τις άδειες, τον τύπο, το user id, το μέγεθος
+του αρχείου, χρόνους δημιουργίας, τελευταίας αλλαγής, τελευταίας προσπέλασης, διαγραφής, το group id, τον αριθμό
+των hardlinks, των αριθμό των sectors που χρησιμοποιεί το inode, flags, operation system specific value, και δείκτες
+σε blocks. Τα inodes αποθηκεύονται μέσα στο inode table.\\
+
+\subsection{Ερώτημα 26ο}
+\begin{enumerate}
+    \item{\textbf{tool:} Με χρήση της εντολής dumpe2fs -h /dev/vdb έχουμε 8192 blocks/group και 1832 inodes/group.}
+    \item{\textbf{hexedit:} Στα offset του superblock 0-3 έχουμε τον συνολικό αριθμό inode στο σύστημα αρχείων ίσο με 
+        0x3218 = 12824, και γνωρίζουμε ότι έχουμε 7 groups άρα 1832 inodes/group. Όμοια στα offset 4-7 
+        έχουμε τον συνολικό αριθμό των blocks ο οποίος είναι 0xC800 = 51200, για 7 groups προκύπτει λοιπόν
+        8192 blocks/group. Επίσης η πληροφορία υπάρχει στα offset 32-35 για τα blocks ανά group και στα
+        offset 40-43 για τα inodes ανά group.\\}
+\end{enumerate§}
+
+\subsection{Ερώτημα 27ο}
+\begin{enumerate}
+\item{\textbf{tool:} 
+Με μερικές εντολές:
+\begin{lstlisting}[language=bash]
+mkdir /tmp/disk1
+mount /dev/vdb /tmp/disk1/
+cd /tmp/disk1/dir2/
+stat helloworld
+\end{lstlisting} \\
+Προκύπτει ότι το inode του αρχείου είναι 9162.}
+\item{\textbf{hexedit:} Θα ξεκινήσουμε από το Block Group Descriptor το οποίο περιέχει για κάθε block
+    group τις θέσεις για τις τοποθεσίες των block bitmaps, των inode bitmaps, των inode tables και άλλα.
+    Αρχικά το Block Group Descriptor βρίσκεται στη θέση 0x800, αφού πρώτα είναι ο bootsector και ύστερα 
+    το superblock. Στο offset 8-11 του Block Group Descriptor υπάρχει η πληροφορία για το αρχικό block 
+    του inode table, το οποίο είναι το 5, άρα πάμε στη θέση $5\cdot \text{blocksize}$ του συστήματος αρχείων.
+    Εδώ μπορούμε να δούμε όλη τη δομή ενός inode, και τα 128 bytes. Εμείς γνωρίζουμε ότι το inode 2 είναι το 
+    root directory άρα αυτό θα μελετήσουμε για να βρούμε το dir2 και τελικά το αρχείο helloworld. Άρα κοιτάμε το 
+    inode στη θέση 0x1480. Στα offset 40-43 μπορούμε να δούμε το block στο οποίο δείχνεί το root directory μας,
+    το οποίο είναι το 234, άρα πάμε στη θέση $234\cdot1024$ η οποία είναι η 0x3A800. Στη θέση αυτή μπορούμε να διακρίνουμε 
+    κάποια directory entry blocks. Το directory entry block που μας ενδιαφέρει είναι αυτό του dir2 το οποίο έχει 
+    inode ίσο με 0x23C9 το οποίο είναι ίσο με 9161, αλλά γνωρίζουμε ότι κάθε BG περιέχει 1832 inodes, άρα 
+    το συγκεκριμένο inode είναι το πρώτο inode στο BG#5. Άρα πρέπει να πάμε στη θέση 0x2801400 για να βρούμε 
+    το inode του dir2. Το πρώτο inode μας παραπέμπει στο block 0x7F, το οποίο είναι στη
+    θέση 0x3dc00 και εδώ βρίσκουμε ένα νέο directory entry block με όνομα helloworld και inode 0x23CA το οποίο είναι
+    το δεύτερο inode στο BG5 με αριθμό 9162. Το δεύτερο directory entry βρίσκεται στο block 0x401, άρα στη θέση 0x100400.
+    Πηγαίνοντας στη θέση αυτή μπορούμε να δούμε το κείμενο "Welcome to the Mighty World of Filesystems".
+    Το αρχείο αναγράφεται σε 42 bytes.}
+\end{enumerate}
+
+\subsection{Ερώτημα 28ο}
+Για να βρούμε το block group ενός inode αρκεί η πράξη $(\text{inode}-1)/\text{inodes per group}$, επομένως
+για το συγκεκριμένο inode το οποίο είναι ίσο με 9162, το block group του είναι το 5.\\
+\subsection{Ερώτημα 29ο}
+\begin{enumerate}
+    \item{\textbf{tool:} Με χρήση dumpe2fs /dev/vdb για το group 5, το inode table ξεκινάει στο block 40965.}
+    \item{\textbf{hexedit:} Στο ερώτημα 27 αποδείξαμε ότι το inode table του inode 9162 είναι το 40965.}
+\end{enumerate}
+
+\subsection{Ερώτημα 30ο}
+    \item{\textbf{tool:}
+            \begin{center}
+                \includegraphics[scale=0.3]{./inode9162stat.png}
+        \end{center}}
+    \item{\textbf{hexedit:}
+            \begin{center}
+                \includegraphics[scale=0.3]{./inode9162.png}
+        \end{center}}
+\subsection{Ερώτημα 31ο}
+Τα δεδομένα του inode αυτού αποδείξαμε στο ερώτημα 27 ότι είναι αποθηκευμένα στο block 0x401 δηλαδή στο 1025.\\
+\subsection{Ερώτημα 32ο}
+\begin{enumerate}
+    \item{\textbf{tool:} Με χρήση της εντολής stat helloworld βλέπουμε ότι το μέγεθος του αρχέιου είναι 42 bytes.}
+    \item{\textbf{hexedit:} Στο ερώτημα 27 αποδείξαμε ότι το μέγεθος του αρχείου είναι 42 bytes.}
+\end{enumerate}
+
+
+\subsection{Ερώτημα 33ο}
+\begin{enumerate}
+    \item{\textbf{tool:} Με χρήση της εντολής cat helloworld το περιεχόμενο του αρχείου είναι "Welcome 
+        to the Mighty World of Filesystems".}
+    \item{\textbf{hexedit:} Στο ερώτημα 27 αποδείξαμε ότι το περιεχόμενο του αρχείου είναι το "Welcome to the Mighty 
+        World of Filesystems".\\
+        \begin{center}
+                \includegraphics[scale=0.5]{./mighty.png}
+        \end{center}}
+\end{enumerate}
+
+\pagebreak
+
+\section{FS Disk 2}
+\subsection{Ερώτημα 1ο}
+Με την εντολή "mount /dev/vdb /mnt" προσαρτήσαμε το δίσκο στον κατάλογο mnt.\\
+
+\subsection{Ερώτημα 2ο}
+Με την εντολή "touch /mnt/file1" δημιουργούμε ένα νέο αρχείο.\\
+
+\subsection{Ερώτημα 3ο}
+Η εντολή απέτυχα καθώς δεν υπάρχει χώρος στη συσκευή. Με την εντολή "dumpe2fs /dev/vdb" παρατηρούμε 
+ότι δεν υπάρχουν διαθέσιμα inodes στο παρόν σύστημα αρχείων.\\
+
+\subsection{Ερώτημα 4ο}
+Η κλήση συστήματος που απέτυχε ήταν η οpen() με κωδικό -ENOSPC.\\
+\begin{center}
+    \includegraphics[scale=0.3]{./nospace.png}
+\end{center}
+
+\subsection{Ερώτημα 5ο}
+\begin{enumerate}
+    \item{\textbf{tool: }Με χρήση της εντολής dumpe2fs /dev/vdb μπορούμε να δούμε ότι τα συνολικά directories μέσα στο 
+        σύστημα αρχείων είναι 84+92+83=259. Αλλιώς μπορούμε με την εντολή "find . -type d | wc -l" να 
+        δούμε το ίδιο αποτέλεσμα. Σχετικά με τα αρχεία, η εντολή "find . -type f | wc -l" θα μας δείξει
+        ότι έχουμε συνολικά 4868. Να σημειώσουμε ότι συνολικά τα inodes είναι 5136, αλλά εμείς έχουμε 
+        χρησιμοποιήσει για αρχεία και directories τα 5127(λαμβάνοντας υπόψην τα root,lost+found directories).
+        Τα υπόλοιπα 9 είναι δεσμευμένα από το ΣΑ.\\}
+    \item{\textbf{hexedit: }Με hexedit, θα οδηγηθούμε στη θέση 0x800, για να δούμε το Block Group Descriptor. Για κάθε 
+        block group, θα πάμε στο offset 16-17, για να βρούμε τον αριθμό των directories μέσα στο block
+        group. 
+
+        \begin{enumerate}
+            \item{Για το Group 0, έχουμε 0x54 = 84 directories.}
+            \item{Για το Group 1, έχουμε 0x53 = 83 directories.}
+            \item{Για το Group 2, έχουμε 0x5C = 92 directories.}
+        \end{enumerate}
+
+        Στο offset 0-3 στο superblock μπορούμε να βρούμε τον συνολικό αριθμό inodes ο οποίος είναι ίσος
+        με 0x1410 = 5136. Στο offset 16-19 στο superblock πάλι μπορούμε να βρούμε τον συνολικό αριθμό
+        ελεύθερων inodes, ο οποίος είναι ίσος με μηδέν. Επομένως, γνωρίζουμε ότι χρησιμοποιούνται όλα
+        τα inodes του ΣΑ, άρα ο αριθμός των αρχείων θα είναι ίσος με: 
+        5136 - δεσμευμένα από ΣΑ - αριθμός directories + 2 = 4868 αρχεία.\\
+    }
+\end{enumerate}
+
+\subsection{Ερώτημα 6ο}
+\begin{enumerate}
+    \item{\textbf{tool: } Με χρήση της εντολής df -h /dev/vdb βλέπουμε ότι τα δεδομένα καταλαμβάνουν χώρο ίσο 
+        με 270Kbytes από τα 20 διαθέσιμα MB.\\}
+    \item{\textbf{hexedit: } Στο offset 4-7 του superblock υπάρχει η πληροφορία της συνολικής ποσότητας των block 
+        μέσα στο fs, ενώ στο offset του superblock 12-15 υπάρχουν τα διαθέσιμα blocks, επομένως συνολικά καταλαμβάνονται
+        925 blocks μέσα σε αυτό το σύστημα αρχείων, σαφώς όχι πλήρως, αλλά ένα μέρος των bit τους μόνο, το οποίο δεν
+        είναι εφικτό να βρούμε με χρήση της πληροφορίας που μας δίνει η δομή ενός ext2.\\}
+\end{enumerate}
+\subsection{Ερώτημα 7ο}
+\begin{enumerate}
+    \item{\textbf{tool: }Είδαμε παραπάνω με τη χρήση της εντολής df ότι συνολικά το αρχείο είναι 20MB.\\}
+    \item{\textbf{hexedit: }Με χρήση του hexedit βλέπουμε κάτω αριστερά ότι το μέγεθος του αρχείου είναι ίσο με
+            0x1400000 = 20MB.\\}
+\end{enumerate}
+
+\subsection{Ερώτημα 8ο}
+\begin{enumerate}
+    \item{\textbf{tool: }Με χρήση dumpe2fs βλέπουμε ότι τα διαθέσιμα blocks είναι 19555. 
+        Με την εντολή df βλέπουμε ότι ο mounted δίσκος έχει διαθέσιμα 19555 blocks το οποίο είναι το
+        98\% του συνολικού χώρου.\\}
+    \item{\textbf{hexedit: }Με hexedit, μπορούμε στα offset 12-15 του superblock να δούμε τον συνολικό 
+        αριθμό των διάθεσιμων blocks ο οποίος είναι ίσος με 0x4C63 = 19555.\\}
+\end{enumerate}
+
+\subsection{Ερώτημα 9ο}
+\begin{enumerate}
+    \item{\textbf{tool: }Με χρήση dumpe2fs βλέπουμε ότι δεν υπάρχουν διαθέσιμα inodes.\\}
+    \item{\textbf{hexedit: }Με χρήση hexedit μπορούμε να δούμε ότι στο offset 16-19 τα
+        διαθέσιμα inodes είναι μηδέν.\\}
+\end{enumerate}
+\pagebreak
+
+\section{FS Disk 3}
+\subsection{Ερώτημα 1ο}
+Το εργαλείο που χρησιμοποιούμε είναι το fsck για επιδιορθώσεις στο σύστημα αρχείων.\\
+\subsection{Ερώτημα 2ο}
+Λόγοι για τους οποίος μπορεί να αποτύχει ένα σύστημα αρχείων είναι οι εξής:
+\begin{enumerate}
+    \item{Αποτυχία του hardware.}
+    \item{Αποτυχία του λογισμικού.}
+    \item{Λάθος shutdowns του συστήματος ή απώλεια ενέργειας κατά την διάρκεια ενός I/O operation.}
+    \item{Επιθέσεις από ιούς και λογισμικά.}
+    \item{Περιπτώσεις όπου το σύστημα αρχείων είναι γεμάτο, το οποίο μπορεί να 
+        προκαλέσει αποτυχία στην προσπέλαση δεδομένων.}
+    \item{Ο τρόπος χρήσης του συστήματος αρχείων.}
+    \item{Ανθρώπινα σφάλματα.}
+    \item{Ασύμβατοι οδηγοί συσκευών.}
+\end{enumerate}
+
+Πιθανές αλλοιώσεις ενός συστήματος αρχείων είναι οι εξής:
+\begin{enumerate}
+    \item{Φυσική αλλοίωση του δίσκου.}
+    \item{Αλλαγή σε bootsector.}
+    \item{Αλλαγή σε superblock.}
+    \item{Αλλαγή σε block group descriptor.}
+    \item{Αλλαγή σε block bitmap.}
+    \item{Αλλαγή σε inode bitmap.}
+    \item{Αλλαγή σε inode table.}
+    \item{Αλλαγή σε data block.}
+    \item{Αλλαγή σε δεσμευμένο directory entry.}
+    \item{Διαγραφή data block.}
+    \item{Αργή απόδοση.}
+    \item{Αλλοίωση των μεταδεδομένων.}
+    \item{Πολλαπλά αρχεία μοιράζονται το ίδιο block.}
+\end{enumerate}
+
+\subsection{Ερώτημα 3ο}
+Εξαντλητικά όλα τα σφάλματα που εντόπισε το εργαλείο είναι τα εξής:
+\begin{enumerate}
+    \item{First entry "BOO" (inode=1717) in directory inode 1717 (/dir-2) should be "."}
+    \item{Inode 3425 ref count is 1, should be 2.}
+    \item{Block bitmap differences: +34}
+    \item{Free blocks count wrong for group \#0 (7960, counted=7961)}
+    \item{Free blocks count wrong (19800, counted=19801)}
+\end{enumerate}
+
+\subsection{Ερώτημα 4ο}
+\begin{enumerate}
+    \item{Το πρώτο πρόβλημα που προκύπτει είναι ότι το πρώτο entry του /dir-2 είναι το "ΒΟΟ" ενώ θα έπρεπε να είναι το "." δηλαδή το ίδιο το directory.
+          Αρχικά πρέπει να βρούμε σε ποιο block group βρίσκεται αυτό το inode, το οποίο είναι το 1 και το index του, το οποίο είναι
+          το 5. Ο navigator μας δίνει την θέση του inode table στο πρώτο group. Είναι στη θέση 0x801400. Το πέμπτο inode βρίσκεται 
+          στη block 0x20DC, δηλαδή στο 8412. Η θέση αυτή είναι η 0x837000. Πλέον μπορούμε να δούμε τα directory entries και το πρώτο 
+          είναι το "BOO" αλλά θα έπρεπε να το ".". Άρα πρέπει να αλλάξουμε τα bytes 0x837008-0x83700A από 42 4F 4F σε 2Ε 00 00. Πρέπει επίσης 
+            να αλλάξουμε το μέγεθος του ονόματος από τρία bytes σε ένα byte στη θέση 0x837006.}
+    \item{To inode 3425 είναι το πρώτο inode στο group 2. Στο offset 26-27 έχουμε τον αριθμό των hardlinks ο οποίος πρέπει να είναι 
+        ίσος με 2 αλλά είναι ίσος με 1. Επομένως αλλάζουμε την τιμή αυτή στη σωστή τιμή.}
+    \item{Στο πρώτο block bitmap στη θέση 0xC04 πρέπει να κάνουμε allocate to block 34, επομένως αλλάζουμε το D με F.}
+    \item{Με την διόρθωση του block bitmap διορθώθηκε και αυτό το πρόβλημα αφού πλέον είναι allocated ένα παραπάνω block.}
+    \item{Με την διόρθωση του block bitmap διορθώθηκε και αυτό το πρόβλημα αφού πλέον είναι allocated ένα παραπάνω block.}
+\end{enumerate}
+
+\subsection{Ερώτημα 5ο}
+Στο dry run το πρόγραμμα τρέχει χωρίς κανένα σφάλμα.\\
+\pagebreak
+
+\section{Μέρος 2ο}
+\subsection{Υλοποίηση των init\_ext2\_fs και exit\_ext2\_fs στο αρχείο super.c}
+\begin{lstlisting}[language=C]
+static int __init init_ext2_fs(void)
+{
+	int err = init_inodecache();
+	if (err)
+		return err;
+	/* Register ext2-lite filesystem in the kernel */
+	/* If an error occurs remember
+    to call destroy_inodecache() */
+	/* ? */
+    err = register_filesystem(&ext2_fs_type);
+    if (err) { 
+        destroy_inodecache();
+        return err;
+    }
+    return 0;
+}
+
+static void __exit exit_ext2_fs(void)
+{
+	/* Unregister ext2-lite filesystem from the kernel */
+	/* ? */
+
+    unregister_filesystem(&ext2_fs_type);
+	destroy_inodecache();
+}
+\end{lstlisting} \\
+
+\subsection{Υλοποίηση της ext2\_find\_entry στο αρχείο dir.c}
+\begin{lstlisting}[language=C]
+ext2_dirent *ext2_find_entry(struct inode *dir, const struct qstr *child,
+                             struct page **res_page)
+{
+	const char *name = child->name;
+	int namelen = child->len;
+    // Directory record length
+	unsigned reclen = EXT2_DIR_REC_LEN(namelen);
+	unsigned long npages = dir_pages(dir);
+	unsigned long i;
+	struct page *page = NULL;
+	ext2_dirent *de;
+	char *kaddr;
+
+	if (npages == 0)
+		return ERR_PTR(-ENOENT);
+
+	*res_page = NULL;
+
+	/* Scan all the pages of the directory to find the requested name. */
+	for (i=0; i < npages; i++) {
+		/* ? */
+        // Read pages of a catalog
+        page = ext2_get_page(dir,i,0);
+        
+        // If reading fails
+        if (IS_ERR(page))
+            return ERR_CAST(page);
+
+        // Return address of address space for the given page
+        kaddr = page_address(page);
+
+        // Return last byte of page
+        de = (ext2_dirent *) kaddr;
+        kaddr += ext2_last_byte(dir, i) - reclen;
+        while((char *) de <= kaddr) {
+            // Zero length of directory entry
+            if(de->rec_len == 0) {
+                ext2_error(dir->i_sb,__func__, "zero-length directory entry");
+                ext2_put_page(page);
+                return ERR_PTR(-ENOENT);
+            }
+
+            // If i find it
+            if (ext2_match(namelen, name, de)) {
+                // Release page
+                // ext2_put_page(page);
+                *res_page = page;
+                return de;
+            }
+
+            // Next entry
+            de = ext2_next_entry(de);
+        }
+        
+        // Release page
+        ext2_put_page(page);
+	}
+	return ERR_PTR(-ENOENT);
+}
+\end{lstlisting} \\
+
+\subsection{Υλοποίηση της ext2\_get\_inode στο αρχείο inode.c}
+\begin{lstlisting}[language=C]
+static struct ext2_inode *ext2_get_inode(struct super_block *sb, ino_t ino,
+                                         struct buffer_head **p)
+{
+	struct buffer_head *bh;
+	unsigned long block_group;
+	unsigned long block;
+	unsigned long offset;
+	struct ext2_group_desc *gdp;
+	unsigned long inodes_pg = EXT2_INODES_PER_GROUP(sb);
+	int inode_sz = EXT2_INODE_SIZE(sb);
+	unsigned long blocksize = sb->s_blocksize;
+
+	*p = NULL;
+	/* Check the validity of the given inode number. */
+	if ((ino != EXT2_ROOT_INO && ino < EXT2_FIRST_INO(sb)) ||
+	    ino > le32_to_cpu(EXT2_SB(sb)->s_es->s_inodes_count))
+		goto einval;
+
+	/* Figure out in which block is the inode we are looking for and get
+	 * its group block descriptor. */
+	/* ? */
+    block_group = (ino -1)/inodes_pg;
+    // Λάβε τον group descriptor για το block group
+    gdp = ext2_get_group_desc(sb,block_group,NULL);
+    // Αν αποτύχει 
+    if (!gdp)
+        goto eio;
+
+	/* Figure out the offset within the block group inode table */
+	/* ? */
+    offset = ((ino - 1)%inodes_pg)*inode_sz;
+    block = le32_to_cpu(gdp->bg_inode_table) + (offset >> EXT2_BLOCK_SIZE_BITS(sb));
+	if (!(bh = sb_bread(sb, block)))
+		goto eio;
+
+	/* Return the pointer to the appropriate ext2_inode */
+	/* ? */
+	*p = bh;
+	offset &= (blocksize - 1);
+	return (struct ext2_inode *) (bh->b_data + offset);
+
+einval:
+	ext2_error(sb, __func__, "bad inode number: %lu", (unsigned long)ino);
+	return ERR_PTR(-EINVAL);
+eio:
+	ext2_error(sb, __func__, "unable to read inode block - inode=%lu, block=%lu",
+	           (unsigned long)ino, block);
+	return ERR_PTR(-EIO);
+}
+\end{lstlisting} \\
+
+\subsection{Υλοποίηση της ext2\_iget στο αρχείο inode.c}
+\begin{lstlisting}[language=C]
+struct inode *ext2_iget(struct super_block *sb, unsigned long ino)
+{
+	struct ext2_inode_info *ei;
+	struct buffer_head *bh = NULL;
+	struct ext2_inode *raw_inode;
+	struct inode *inode;
+	long ret = -EIO;
+	int n;
+
+	ext2_debug("request to get ino: %lu\n", ino);
+
+	/*
+	 * Allocate the VFS node.
+	 * We know that the returned inode is part of a bigger ext2_inode_info
+	 * inode since iget_locked() calls our ext2_sops->alloc_inode() function
+	 * to perform the allocation of the inode.
+	 */
+	inode = iget_locked(sb, ino);
+	if (!inode)
+		return ERR_PTR(-ENOMEM);
+	if (!(inode->i_state & I_NEW))
+		return inode;
+
+	/*
+	 * Read the EXT2 inode *from disk*
+	 */
+	raw_inode = ext2_get_inode(inode->i_sb, ino, &bh);
+	if (IS_ERR(raw_inode)) {
+		ret = PTR_ERR(raw_inode);
+		brelse(bh);
+		iget_failed(inode);
+		return ERR_PTR(ret);
+	}
+
+	/*
+	 * Fill the necessary fields of the VFS inode structure.
+	 */
+	inode->i_mode = le16_to_cpu(raw_inode->i_mode);
+	i_uid_write(inode, (uid_t)le16_to_cpu(raw_inode->i_uid));
+	i_gid_write(inode, (gid_t)le16_to_cpu(raw_inode->i_gid));
+	set_nlink(inode, le16_to_cpu(raw_inode->i_links_count));
+	inode->i_atime.tv_sec = (signed)le32_to_cpu(raw_inode->i_atime);
+	inode->i_ctime.tv_sec = (signed)le32_to_cpu(raw_inode->i_ctime);
+	inode->i_mtime.tv_sec = (signed)le32_to_cpu(raw_inode->i_mtime);
+	inode->i_atime.tv_nsec = 0;
+	inode->i_mtime.tv_nsec = 0;
+	inode->i_ctime.tv_nsec = 0;
+	inode->i_blocks = le32_to_cpu(raw_inode->i_blocks);
+	inode->i_size = le32_to_cpu(raw_inode->i_size);
+	if (i_size_read(inode) < 0) {
+		ret = -EUCLEAN;
+		brelse(bh);
+		iget_failed(inode);
+		return ERR_PTR(ret);
+	}
+	//> Setup the {inode,file}_operations structures depending on the type.
+	if (S_ISREG(inode->i_mode)) {
+		/* ? */
+        inode->i_op = &ext2_file_inode_operations;
+        inode->i_fop = &ext2_file_operations;
+        inode->i_mapping->a_ops = &ext2_aops;
+
+	} else if (S_ISDIR(inode->i_mode)) {
+		/* ? */
+        inode->i_op = &ext2_dir_inode_operations;
+        inode->i_fop = &ext2_dir_operations;
+        inode->i_mapping->a_ops = &ext2_aops;
+
+	} else if (S_ISLNK(inode->i_mode)) {
+		if (ext2_inode_is_fast_symlink(inode)) {
+			inode->i_op = &simple_symlink_inode_operations;
+			inode->i_link = (char *)ei->i_data;
+			nd_terminate_link(ei->i_data, inode->i_size,
+                            sizeof(ei->i_data) - 1);
+		} else {
+			inode->i_op = &page_symlink_inode_operations;
+			inode_nohighmem(inode);
+			inode->i_mapping->a_ops = &ext2_aops;
+		}
+	} else {
+		inode->i_op = &ext2_special_inode_operations;
+		if (raw_inode->i_block[0])
+			init_special_inode(inode, inode->i_mode,
+			   old_decode_dev(le32_to_cpu(raw_inode->i_block[0])));
+		else 
+			init_special_inode(inode, inode->i_mode,
+			   new_decode_dev(le32_to_cpu(raw_inode->i_block[1])));
+	}
+
+	/*
+	 * Fill the necessary fields of the ext2_inode_info structure.
+	 */
+	ei = EXT2_I(inode);
+	ei->i_dtime = le32_to_cpu(raw_inode->i_dtime);
+	ei->i_flags = le32_to_cpu(raw_inode->i_flags);
+	ext2_set_inode_flags(inode);
+	ei->i_dtime = 0;
+	ei->i_state = 0;
+	ei->i_block_group = (ino - 1) / EXT2_INODES_PER_GROUP(inode->i_sb);
+	//> NOTE! The in-memory inode i_data array is in little-endian order
+	//> even on big-endian machines: we do NOT byteswap the block numbers!
+	for (n = 0; n < EXT2_N_BLOCKS; n++)
+		ei->i_data[n] = raw_inode->i_block[n];
+
+	brelse(bh);
+	unlock_new_inode(inode);
+	return inode;
+}
+\end{lstlisting} \\
+
+\subsection{Υλοποίηση της ext2\_allocate\_in\_bg στο αρχείο balloc.c}
+\begin{lstlisting}[language=C]
+static int ext2_allocate_in_bg(struct super_block *sb, int group,
+                               struct buffer_head *bitmap_bh, unsigned long *count)
+{
+	ext2_fsblk_t group_first_block = ext2_group_first_block_no(sb, group);
+	ext2_fsblk_t group_last_block = ext2_group_last_block_no(sb, group);
+	ext2_grpblk_t nblocks = group_last_block - group_first_block + 1;
+	ext2_grpblk_t first_free_bit;
+	unsigned long num;
+
+	/* ? */
+    first_free_bit = find_next_zero_bit_le(bitmap_bh->b_data,
+                            nblocks, group_first_block);
+    if (first_free_bit >= nblocks) {
+        return -1;
+    }
+    
+    num = 0;
+
+    for (; num < * count && first_free_bit < nblocks; first_free_bit++) { 
+        // If I don't allocate 
+        if (ext2_set_bit_atomic(sb_bgl_lock(EXT2_SB(sb), group),
+                    first_free_bit, bitmap_bh->b_data)) {
+            // Allocated nothing
+            if (num == 0)
+                continue;
+
+            // Space filled
+            break;
+        }
+        // Else +1 to the number of allocations
+        num++;
+    }
+
+    if (num == 0)
+        return -1;
+    
+    *count = num;
+    return first_free_bit - num;
+}
+\end{lstlisting} \\
+\pagebreak
+
+\subsection{Υλοποίηση Testing}
+Για την υλοποίηση του testing, αρχικά είδαμε τα kernel logs για να αντιληφθούμε τυχόντα σφάλματα στον 
+κώδικα. Όταν όλα τα σφάλματα διορθώθηκαν υλοποιήσαμε το εξής script:
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+
+cd /mnt
+
+for i in {1..5}
+do
+mkdir dir$i
+	cd dir$i
+	for j in {1..3}
+	do
+		touch file$j
+		echo "1" > file$j
+		cat file$j
+	done
+	rm file3
+	cd ..
+done
+rm -r dir1
+\end{lstlisting} \\
+
+Το filesystem λειτουργεί σωστά με όλες τις παραπάνω εντολές.\\
+
+\pagebreak
+\printbibliography
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

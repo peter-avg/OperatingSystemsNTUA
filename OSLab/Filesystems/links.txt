@@ -1,0 +1,5 @@
+-- Ωραίες επεξηγήσεις
+https://wiki.osdev.org/Ext2
+
+-- Ext2 Source Code
+https://elixir.bootlin.com/linux/v5.10/source/fs/ext2

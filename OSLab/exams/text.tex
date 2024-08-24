@@ -1,0 +1,117 @@
+\documentclass{article}
+\usepackage[greek,english]{babel}
+\usepackage{alphabeta}
+\usepackage{xcolor}
+\usepackage{listings}
+\lstset{style=mystyle}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{blindtext}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{steinmetz}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage[shortlabels]{enumitem}
+\usepackage[backend=biber]{biblatex}
+\addbibresource{./report.bib}
+\usepackage{hyperref}
+
+\usepackage{tikz}
+\usepackage{fdsymbol}
+% \newcommand{\comment}[1]{}
+\renewcommand{\labelitemii}{\(\medblackdiamond\)}
+\renewcommand{\labelitemiii}{\(\medblacksquare\)}
+\renewcommand{\labelitemiv}{\(\medblackcircle\)}%
+ \geometry{
+ a4paper,
+ total={170mm,257mm},
+ left=20mm,
+ top=20mm,
+ }
+ \usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+\title{Drivers for exams}
+
+\begin{document}
+\maketitle
+
+\section{DRIVER K24}
+\begin{center}
+    \includegraphics{}
+\end{center}
+\lstinputlisting[language=C]{./K24/driverK24.c}
+
+
+\section{DRIVER K23}
+\begin{center}
+    \includegraphics{}
+\end{center}
+\lstinputlisting[language=C]{./K23/driverK23.c}
+\pagebreak
+
+\section{DRIVER K22}
+\begin{center}
+    \includegraphics{}
+\end{center}
+\lstinputlisting[language=C]{./K22/driverK22.c}
+\pagebreak
+
+\section{DRIVER K11}
+\begin{center}
+    \includegraphics{}
+\end{center}
+\lstinputlisting[language=C]{./K11/driverK11.c}
+\pagebreak
+
+\section{LUNIX}
+\begin{center}
+    \includegraphics{}
+\end{center}
+\lstinputlisting[language=C]{../lunix/lunix/lunix-chrdev.h}
+\lstinputlisting[language=C]{../lunix/lunix/lunix-chrdev.c}
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
